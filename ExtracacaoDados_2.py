@@ -1,241 +1,236 @@
 from playwright.sync_api import sync_playwright
 from datetime import datetime, timedelta
 
-with sync_playwright() as p:
-    # Caminho para o executável do Microsoft Edge
-    caminho_edge = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+def run():
+    with sync_playwright() as p:
+        # Configurações do Edge
+        caminho_edge = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+        caminho_perfil = r"C:\Users\81057638\AppData\Local\Microsoft\Edge\User Data\Default"
+        
+        print("="*70)
+        print("EXTRAÇÃO CMA WEB - PONTOS ALARMADOS")
+        print("="*70)
+        print(f"Perfil: {caminho_perfil}\n")
+        
+        # Iniciar navegador com perfil persistente
+        context = p.chromium.launch_persistent_context(
+            user_data_dir=caminho_perfil,
+            executable_path=caminho_edge,
+            headless=False,
+            channel="msedge"
+        )
+        
+        page = context.new_page()
+        
+        # Passo 1: Navegar para a página
+        print("1. Navegando para a página...")
+        page.goto("https://prd.webapp.cmaweb.valenet.valeglobal.net/analises/pontos-alarmados")
+        
+        # Aguardar autenticação automática
+        print("2. Aguardando autenticação...")
+        page.wait_for_url("**/analises/pontos-alarmados", timeout=60000)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Verificar se o diálogo de configuração aparece
+        print("3. Verificando diálogo de configuração...")
 
-    # Caminho para o perfil autenticado do Edge
-    caminho_perfil = r"C:\Users\81037712\playwright_edge_profile"
+        dialogo_visivel = False
 
-    context = p.chromium.launch_persistent_context(
-        user_data_dir=caminho_perfil,
-        executable_path=caminho_edge,
-        headless=False
-    )
-
-    pagina = context.new_page()
-    
-    # Navegação inicial e aguardo da autenticação
-    print("Navegando para a página e aguardando autenticação...")
-    pagina.goto("https://prd.webapp.cmaweb.valenet.valeglobal.net/analises/pontos-alarmados")
-    
-    # Aguardar redirecionamento para /analises/pontos-alarmados após autenticação
-    print("Aguardando conclusão da autenticação automática...")
-    pagina.wait_for_url("**/analises/pontos-alarmados", timeout=60000)
-    pagina.wait_for_load_state("networkidle")
-    pagina.wait_for_timeout(3000)
-    
-    # Passo 0: Verificar se o dialog de configuração está visível
-    print("Verificando se o diálogo de configuração está visível...")
-    dialog_visible = False
-    try:
-        dialog = pagina.locator('#mat-mdc-dialog-0.mat-mdc-dialog-container. mdc-dialog. cdk-dialog-container.mdc-dialog--open')
-        dialog. wait_for(state="visible", timeout=5000)
-        dialog_visible = True
-        print("Diálogo de configuração detectado.  Iniciando configuração...")
-    except:
-        print("Diálogo não encontrado ou já foi preenchido anteriormente.")
-    
-    if dialog_visible:
-        # Passo 1: Selecionar Área de Negócio - Mineração
-        print("Passo 1: Selecionando Área de Negócio - Mineração...")
-        pagina.wait_for_timeout(1000)
-        
-        # Localizar o mat-select da área (após o elemento <p>Área de Negócio</p>)
-        area_select = pagina.locator('#areaInputTest')
-        area_select.wait_for(state="visible")
-        area_select.click()
-        pagina.wait_for_timeout(1000)
-        
-        # Selecionar a opção Mineração
-        opcao_mineracao = pagina. locator('#Mineração-option')
-        opcao_mineracao.wait_for(state="visible")
-        opcao_mineracao.click()
-        pagina.wait_for_timeout(1500)
-        
-        # Passo 2: Selecionar Site
-        print("Passo 2: Selecionando Site...")
-        
-        # Localizar o mat-select do site
-        site_select = pagina. locator('#siteInputTest')
-        site_select.wait_for(state="visible")
-        site_select.click()
-        pagina.wait_for_timeout(1000)
-        
-        # Selecionar a opção com id 45-option
-        opcao_site = pagina.locator('#\\34 5-option')  # Escapando o número inicial com \3 seguido do número
-        opcao_site. wait_for(state="visible")
-        opcao_site.click()
-        pagina.wait_for_timeout(1500)
-        
-        # Passo 3: Selecionar Perfil - Analista
-        print("Passo 3: Selecionando Perfil - Analista...")
-        
-        # Localizar o mat-select do perfil
-        perfil_select = pagina.locator('#perfilInputTest')
-        perfil_select.wait_for(state="visible")
-        perfil_select.click()
-        pagina.wait_for_timeout(1000)
-        
-        # Selecionar a opção Analista
-        opcao_analista = pagina.locator('mat-option: has-text("Analista")')
-        opcao_analista. wait_for(state="visible")
-        opcao_analista. click()
-        pagina.wait_for_timeout(1500)
-        
-        # Procurar e clicar no botão de confirmação/OK do diálogo
-        print("Confirmando seleções...")
-        botao_confirmar = pagina. locator('button:has-text("Confirmar"), button:has-text("OK"), button:has-text("Avançar")')
+        # PRIMEIRO: Verificar se o diálogo JÁ está aberto
         try:
-            botao_confirmar.first.wait_for(state="visible", timeout=3000)
-            botao_confirmar.first.click()
-            pagina.wait_for_timeout(2000)
+            dialogo = page.locator("mat-dialog-container, . mat-mdc-dialog-container").first
+            dialogo.wait_for(state="visible", timeout=2000)
+            dialogo_visivel = True
+            print("   ✓ Diálogo já está aberto")
         except:
-            print("Botão de confirmação não encontrado ou não necessário.")
-    
-    # Aguardar página carregar completamente após configuração
-    pagina.wait_for_load_state("networkidle")
-    pagina.wait_for_timeout(2000)
-    
-    # Início do fluxo principal de extração
-    print("\n=== Iniciando fluxo de extração ===\n")
-    
-    # Passo 2 (original): Selecionar todos os locais
-    print("Selecionando todos os locais...")
-    try:
-        # Aguardar o checkbox estar disponível
-        pagina.wait_for_selector('input[id*="checkbox-input"]', state="visible", timeout=10000)
+            print("   ℹ Diálogo está fechado, abrindo...")
+
+        # Se NÃO estiver aberto, abrir agora
+        if not dialogo_visivel: 
+            try:
+                # Clicar no ícone expand_more para abrir o diálogo
+                page.get_by_text("expand_more").click()
+                page.wait_for_timeout(1500)
+                
+                # Verificar se abriu
+                dialogo = page.locator("mat-dialog-container, .mat-mdc-dialog-container").first
+                dialogo.wait_for(state="visible", timeout=5000)
+                dialogo_visivel = True
+                print("   ✓ Diálogo aberto com sucesso")
+            except Exception as e:
+                print(f"   ✗ Erro ao abrir diálogo: {e}")
+                print("   ⚠ Não será possível configurar.  Continuando...")
+
+        # AGORA SIM: Preencher o diálogo (só se estiver aberto)
+        if dialogo_visivel:
+            try: 
+                # Selecionar Área - Mineração
+                print("   - Selecionando Área: Mineração...")
+                page.locator("#mat-select-value-3").click()
+                page.wait_for_timeout(500)
+                page.locator("[id=\"Mineração-option\"]").get_by_text("Mineração").click()
+                page.wait_for_timeout(1000)
+                
+                # Selecionar Site - FEIT-BFC
+                print("   - Selecionando Site:  FEIT-BFC - Benef. Cauê...")
+                page.get_by_label("Site").click()
+                page.wait_for_timeout(500)
+                page.get_by_text("FEIT-BFC - Benef.  Cauê").click()
+                page.wait_for_timeout(1000)
+                
+                # Selecionar Perfil - Analista
+                print("   - Selecionando Perfil: Analista...")
+                page.locator(". mat-mdc-select-placeholder").click()
+                page.wait_for_timeout(500)
+                page.get_by_text("Analista", exact=True).click()
+                page.wait_for_timeout(1500)
+                
+                # Tentar confirmar (se houver botão)
+                try:
+                    botao_confirmar = page.get_by_role("button", name="Confirmar")
+                    botao_confirmar.click(timeout=2000)
+                    page.wait_for_timeout(1000)
+                    print("   ✓ Configuração confirmada")
+                except:
+                    try: 
+                        page.get_by_role("button", name="OK").click(timeout=2000)
+                        page.wait_for_timeout(1000)
+                        print("   ✓ Configuração confirmada")
+                    except: 
+                        print("   ℹ Botão de confirmação não encontrado")
+                
+                print("✓ Configuração inicial concluída")
+                
+            except Exception as e:
+                print(f"   ✗ Erro ao preencher configuração: {e}")
+        else:
+            print("   ✗ Não foi possível abrir o diálogo de configuração")
+            print("   ⚠ O script pode não funcionar corretamente")
         
-        # Tentar localizar o checkbox específico de locais
-        checkbox_locais = pagina.locator('input[id*="0100000000000319446-checkbox-input"]').first
-        if not checkbox_locais. is_checked():
-            checkbox_locais. click()
-        pagina.wait_for_timeout(1000)
-        print("✓ Locais selecionados")
-    except Exception as e: 
-        print(f"Aviso: Não foi possível selecionar locais automaticamente. Erro: {e}")
-
-    # Passo 3 (original): Expandir lista de responsáveis
-    print("Expandindo lista de responsáveis...")
-    try:
-        pagina.wait_for_selector('div. mat-mdc-form-field-infix', state="visible")
-        # Procurar pela div relacionada aos responsáveis
-        form_fields = pagina.locator('div.mat-mdc-form-field-infix')
-        # Tentar diferentes índices se necessário
-        form_fields.nth(1).click()
-        pagina.wait_for_timeout(1000)
-        print("✓ Lista de responsáveis expandida")
-    except Exception as e:
-        print(f"Aviso:  Problema ao expandir responsáveis. Erro: {e}")
-
-    # Passo 4 (original): Selecionar todos os responsáveis
-    print("Selecionando todos os responsáveis...")
-    try:
-        pagina.wait_for_selector('input[id*="idBotaoSelecionarTodos"]', state="visible", timeout=5000)
-        checkbox_responsaveis = pagina. locator('input[id*="idBotaoSelecionarTodos-input"]').first
-        checkbox_responsaveis.click()
-        pagina.wait_for_timeout(1000)
+        # Aguardar página principal carregar
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(2000)
         
-        # Fechar dropdown clicando fora
-        pagina.click('body')
-        pagina.wait_for_timeout(500)
-        print("✓ Responsáveis selecionados")
-    except Exception as e:
-        print(f"Aviso: Não foi possível selecionar responsáveis.  Erro: {e}")
-
-    # Passo 5 (original): Selecionar data inicial (3 dias atrás)
-    print("Selecionando data inicial...")
-    try:
+        # Passo 4: Selecionar todos os locais
+        print("4. Selecionando todos os locais...")
+        try:
+            page.get_by_label("", exact=True).check()
+            page.wait_for_timeout(1000)
+            print("✓ Locais selecionados")
+        except Exception as e:
+            print(f"   ⚠ Erro ao selecionar locais: {e}")
+        
+        # Passo 5: Limpar seleção de responsáveis
+        print("5. Limpando responsáveis...")
+        try:
+            page.locator(".select-trigger").click()
+            page.wait_for_timeout(1000)
+            page.locator("[id=\"'idBotaoLimparSelecionado'\"]").click()
+            page.wait_for_timeout(500)
+            page.locator(".cdk-overlay-backdrop").click()
+            page.wait_for_timeout(1000)
+            print("✓ Responsáveis limpos")
+        except Exception as e:
+            print(f"   ⚠ Erro ao limpar responsáveis: {e}")
+        
+        # Calcular datas
         data_hoje = datetime.today()
         data_inicio = data_hoje - timedelta(days=3)
         
-        # Localizar o datepicker de início
-        datepicker_inicio = pagina.locator('app-reusable-datepicker[formcontrolname="periodoInicio"]')
-        datepicker_inicio.click()
-        pagina.wait_for_timeout(1000)
+        # Passo 6: Selecionar data inicial
+        print(f"6. Selecionando data inicial: {data_inicio.strftime('%d/%m/%Y')}...")
+        try:
+            page.locator("#selectPeriodoInicio").click()
+            page.wait_for_timeout(500)
+            page.locator("#selectPeriodoInicio--toggle").get_by_role("button", name="Open calendar").click()
+            page.wait_for_timeout(1000)
+            
+            # Clicar no dia específico (ajuste conforme necessário)
+            # O gravador clicou no dia 13, você precisará ajustar para o dia calculado
+            dia_inicio = data_inicio.day
+            page.get_by_role("button", name=f"{dia_inicio}/", exact=False).first.click()
+            page.wait_for_timeout(1000)
+            print(f"✓ Data inicial selecionada: {data_inicio.strftime('%d/%m/%Y')}")
+        except Exception as e:
+            print(f"   ⚠ Erro ao selecionar data inicial:  {e}")
+            # Fallback:  preencher manualmente
+            try:
+                page.locator("#selectPeriodoInicio").fill(data_inicio.strftime("%d/%m/%Y"))
+                page.keyboard.press("Enter")
+                page.wait_for_timeout(1000)
+            except: 
+                print("   ⚠ Não foi possível definir data inicial")
         
-        # Aguardar o calendário aparecer
-        pagina.wait_for_selector('#mat-datepicker-0', state="visible", timeout=5000)
+        # Passo 7: Selecionar data final
+        print(f"7. Selecionando data final: {data_hoje.strftime('%d/%m/%Y')}...")
+        try:
+            page.locator("#codigo-1").click()
+            page.wait_for_timeout(500)
+            
+            # Clicar no dia atual
+            dia_hoje = data_hoje.day
+            page.get_by_role("button", name=f"{dia_hoje}/", exact=False).first.click()
+            page.wait_for_timeout(1000)
+            print(f"✓ Data final selecionada:  {data_hoje.strftime('%d/%m/%Y')}")
+        except Exception as e:
+            print(f"   ⚠ Erro ao selecionar data final: {e}")
+            # Fallback: preencher manualmente
+            try:
+                page.locator("#codigo-1").fill(data_hoje.strftime("%d/%m/%Y"))
+                page.keyboard.press("Enter")
+                page.wait_for_timeout(1000)
+            except:
+                print("   ⚠ Não foi possível definir data final")
         
-        # Preencher a data
-        input_data_inicio = datepicker_inicio.locator('input')
-        input_data_inicio. fill(data_inicio.strftime("%d/%m/%Y"))
-        pagina.keyboard.press("Enter")
-        pagina.wait_for_timeout(1000)
-        print(f"✓ Data inicial selecionada: {data_inicio.strftime('%d/%m/%Y')}")
-    except Exception as e:
-        print(f"Aviso: Problema ao selecionar data inicial.  Erro: {e}")
-
-    # Passo 6 (original): Selecionar data final (hoje)
-    print("Selecionando data final...")
-    try:
-        datepicker_fim = pagina. locator('app-reusable-datepicker[formcontrolname="periodoFim"]')
-        datepicker_fim. click()
-        pagina.wait_for_timeout(1000)
+        # Passo 8: Desmarcar "Apenas Pendente"
+        print("8. Desmarcando 'Apenas Pendente'...")
+        try:
+            checkbox_pendente = page.get_by_role("checkbox", name="Apenas Pendente")
+            if checkbox_pendente.is_checked():
+                checkbox_pendente. uncheck()
+            page.wait_for_timeout(1000)
+            print("✓ 'Apenas Pendente' desmarcado")
+        except Exception as e:
+            print(f"   ⚠ Erro ao desmarcar pendente: {e}")
         
-        # Aguardar o calendário aparecer
-        pagina.wait_for_selector('#mat-datepicker-1', state="visible", timeout=5000)
+        # Passo 9: Pesquisar
+        print("9. Realizando pesquisa...")
+        try:
+            page.get_by_role("button", name="Pesquisar").click()
+            page.wait_for_timeout(3000)
+            page.wait_for_load_state("networkidle")
+            page.wait_for_timeout(3000)
+            print("✓ Pesquisa realizada com sucesso")
+        except Exception as e:
+            print(f"   ✗ Erro ao pesquisar: {e}")
+            context.close()
+            return
         
-        # Preencher a data
-        input_data_fim = datepicker_fim.locator('input')
-        input_data_fim. fill(data_hoje.strftime("%d/%m/%Y"))
-        pagina.keyboard.press("Enter")
-        pagina.wait_for_timeout(1000)
-        print(f"✓ Data final selecionada: {data_hoje. strftime('%d/%m/%Y')}")
-    except Exception as e:
-        print(f"Aviso: Problema ao selecionar data final. Erro: {e}")
-
-    # Passo 7 (original): Desmarcar checkbox "apenas pendentes"
-    print("Desmarcando opção 'apenas pendentes'...")
-    try:
-        pagina.wait_for_selector('#mat-mdc-checkbox-1-input', state="visible", timeout=5000)
-        checkbox_pendentes = pagina.locator('#mat-mdc-checkbox-1-input')
-        if checkbox_pendentes.is_checked():
-            checkbox_pendentes. click()
-        pagina.wait_for_timeout(1000)
-        print("✓ Opção 'apenas pendentes' desmarcada")
-    except Exception as e:
-        print(f"Aviso: Problema com checkbox pendentes. Erro: {e}")
-
-    # Passo 8 (original): Clicar no botão Pesquisar
-    print("Clicando em Pesquisar...")
-    try:
-        # Localizar o botão através do ícone e texto
-        botao_pesquisar = pagina.locator('button:has(mat-icon: text("search")):has(span. text: text("Pesquisar"))')
-        botao_pesquisar. wait_for(state="visible", timeout=10000)
-        botao_pesquisar.click()
+        # Passo 10: Exportar dados
+        print("10. Exportando dados...")
+        try:
+            with page.expect_download(timeout=30000) as download_info:
+                page.get_by_role("button", name="Exportar Dados").click()
+            
+            download = download_info.value
+            
+            # Salvar arquivo
+            caminho_destino = "C:/Users/81057638/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/arquivo_cma.xlsx"
+            download.save_as(caminho_destino)
+            
+            print(f"✓ Download concluído!")
+            print(f"✓ Arquivo salvo em:  {caminho_destino}")
+        except Exception as e:
+            print(f"   ✗ Erro ao exportar dados: {e}")
         
-        # Aguardar carregamento dos resultados
-        print("Aguardando carregamento dos resultados...")
-        pagina.wait_for_timeout(5000)
+        # Finalizar
+        page.wait_for_timeout(3000)
+        context.close()
         
-        # Aguardar indicador de carregamento desaparecer (se existir)
-        pagina.wait_for_load_state("networkidle")
-        pagina.wait_for_timeout(3000)
-        print("✓ Pesquisa realizada com sucesso")
-    except Exception as e:
-        print(f"Erro ao realizar pesquisa: {e}")
+        print("\n" + "="*70)
+        print("PROCESSO FINALIZADO COM SUCESSO!")
+        print("="*70)
 
-    # Passo 9 (original): Clicar no botão Exportar Dados
-    print("Exportando dados...")
-    try:
-        botao_exportar = pagina. locator('button:has(mat-icon:text("download")):has(span.text:text("Exportar Dados"))')
-        botao_exportar.wait_for(state="visible", timeout=15000)
-        
-        # Configurar download
-        with pagina.expect_download() as download_info:
-            botao_exportar.click()
-
-        download = download_info.value
-        caminho_destino = "C:/Users/81037712/Vale S. A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/arquivo_cma.xlsx"
-        download.save_as(caminho_destino)
-
-        print(f"✓ Download concluído e salvo em: {caminho_destino}")
-    except Exception as e:
-        print(f"Erro ao exportar dados: {e}")
-
-    pagina.wait_for_timeout(3000)
-    context.close()
-    
-    print("\n=== Processo finalizado com sucesso! ===")
+if __name__ == "__main__":
+    run()
