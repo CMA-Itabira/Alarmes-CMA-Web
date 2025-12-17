@@ -7,7 +7,7 @@ Este script automatiza o processo de extração da base de dados de alarmes do s
 - Abre o navegador Microsoft Edge utilizando um perfil de usuário já autenticado.
 - Navega automaticamente até a seção "Análise de pontos alarmados" do CMA Web.
 - Seleciona todos os sites e áreas para a consulta.
-- Define um período de consulta para os últimos 2 dias.
+- Define um período de consulta para os últimos 3 dias.
 - Realiza a pesquisa e faz o download do relatório gerado.
 - Salva o arquivo baixado em um caminho pré-definido.
 

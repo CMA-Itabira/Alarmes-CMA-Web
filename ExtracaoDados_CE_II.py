@@ -13,14 +13,22 @@ def run():
         print(f"Perfil: {caminho_perfil}\n")
         
         # Iniciar navegador com perfil persistente
-        context = p.chromium.launch_persistent_context(
+        context = p.chromium. launch_persistent_context(
             user_data_dir=caminho_perfil,
             executable_path=caminho_edge,
             headless=False,
-            channel="msedge"
+            channel="msedge",
+            args=[
+                '--disable-cache',
+                '--disable-application-cache',
+                '--disable-offline-load-stale-cache',
+                '--disk-cache-size=0'
+            ]
         )
         
         page = context.new_page()
+        
+        print("✓ Cache limpos")
         
         # Passo 1: Navegar para a página
         print("1. Navegando para a página...")
@@ -194,7 +202,7 @@ def run():
         print("9. Realizando pesquisa...")
         try:
             page.get_by_role("button", name="Pesquisar").click()
-            page.wait_for_timeout(4000)
+            page.wait_for_timeout(5000)
             page.wait_for_load_state("networkidle")
             page.wait_for_timeout(6000)
             print("✓ Pesquisa realizada com sucesso")
