@@ -73,7 +73,7 @@ def run():
                 page.wait_for_timeout(1000)
                 
                 # Selecionar Site - FEIT-BFC
-                print("   - Selecionando Site:  FEIT-BFC - Benef. Cauê...")
+                print("   - Selecionando Site:  FEIT-BFC - Benef. Conceição I...")
                 # Apenas para limpar o input de perfil - isso caso o site de Conceição I já esteja selecionado
                 page.get_by_label("Site").click()
                 page.locator("[id=\"45-option\"]").get_by_text("FEIT-BFC - Benef.  Cauê").click()
