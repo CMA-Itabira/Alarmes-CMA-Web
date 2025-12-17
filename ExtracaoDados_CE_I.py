@@ -212,7 +212,7 @@ def run():
             download = download_info.value
             
             # Salvar arquivo
-            caminho_destino = "./ITABIRA_CONCEICAO1.xlsx"
+            caminho_destino = "C:/Users/81057638/OneDrive - Vale S.A/PREDITIVA COMPLEXO ITABIRA - CMA 2.0/ITABIRA_CONCEICAO1.xlsx"
             download.save_as(caminho_destino)
             
             print(f"✓ Download concluído!")
