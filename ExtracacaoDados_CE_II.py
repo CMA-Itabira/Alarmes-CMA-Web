@@ -74,33 +74,25 @@ def run():
                 
                 # Selecionar Site - FEIT-BFC
                 print("   - Selecionando Site:  FEIT-BFC - Benef. Cauê...")
+                # Apenas para limpar o input de perfil - isso caso o site de Conceição II já esteja selecionado
+                page.get_by_label("Site").click()
+                page.locator("[id=\"45-option\"]").get_by_text("FEIT-BFC - Benef.  Cauê").click()
+                page.wait_for_timeout(500)
+                
+                page.wait_for_timeout(1000)
+
+                # Seleção Real do Site
                 page.get_by_label("Site").click()
                 page.wait_for_timeout(500)
-                page.get_by_text("FEIT-BFC - Benef.  Cauê").click()
+                page.locator("[id=\"56-option\"]").get_by_text("FEIT-BFO - Benef. Conceição II").click()
                 page.wait_for_timeout(1000)
                 
                 # Selecionar Perfil - Analista
                 print("   - Selecionando Perfil: Analista...")
-                page.locator(". mat-mdc-select-placeholder").click()
+                page.get_by_label("Perfil").click()
                 page.wait_for_timeout(500)
-                page.get_by_text("Analista", exact=True).click()
+                page.locator("[id=\"[object Object]-option\"]").get_by_text("Analista").click()
                 page.wait_for_timeout(1500)
-                
-                # Tentar confirmar (se houver botão)
-                try:
-                    botao_confirmar = page.get_by_role("button", name="Confirmar")
-                    botao_confirmar.click(timeout=2000)
-                    page.wait_for_timeout(1000)
-                    print("   ✓ Configuração confirmada")
-                except:
-                    try: 
-                        page.get_by_role("button", name="OK").click(timeout=2000)
-                        page.wait_for_timeout(1000)
-                        print("   ✓ Configuração confirmada")
-                    except: 
-                        print("   ℹ Botão de confirmação não encontrado")
-                
-                print("✓ Configuração inicial concluída")
                 
             except Exception as e:
                 print(f"   ✗ Erro ao preencher configuração: {e}")
@@ -121,15 +113,22 @@ def run():
         except Exception as e:
             print(f"   ⚠ Erro ao selecionar locais: {e}")
         
-        # Passo 5: Limpar seleção de responsáveis
+        #Passo 5: Limpar seleção de responsáveis
         print("5. Limpando responsáveis...")
         try:
-            page.locator(".select-trigger").click()
+            page.locator("[id=\"'inputMultiSelectOpenOpcoes\"]").click()
             page.wait_for_timeout(1000)
             page.locator("[id=\"'idBotaoLimparSelecionado'\"]").click()
-            page.wait_for_timeout(500)
-            page.locator(".cdk-overlay-backdrop").click()
             page.wait_for_timeout(1000)
+            print("   - Fechando dropdown...")
+            try:
+                if page.locator("#cdk-overlay-0").is_visible():
+                    # Clicar em uma posição fixa no canto superior esquerdo
+                    page.mouse.click(50, 50)
+                    page.wait_for_timeout(500)
+                    print("   ✓ Dropdown fechado")
+            except Exception as e:
+                print(f"   ⚠ Erro:  {e}")
             print("✓ Responsáveis limpos")
         except Exception as e:
             print(f"   ⚠ Erro ao limpar responsáveis: {e}")
@@ -141,13 +140,10 @@ def run():
         # Passo 6: Selecionar data inicial
         print(f"6. Selecionando data inicial: {data_inicio.strftime('%d/%m/%Y')}...")
         try:
-            page.locator("#selectPeriodoInicio").click()
-            page.wait_for_timeout(500)
             page.locator("#selectPeriodoInicio--toggle").get_by_role("button", name="Open calendar").click()
             page.wait_for_timeout(1000)
             
             # Clicar no dia específico (ajuste conforme necessário)
-            # O gravador clicou no dia 13, você precisará ajustar para o dia calculado
             dia_inicio = data_inicio.day
             page.get_by_role("button", name=f"{dia_inicio}/", exact=False).first.click()
             page.wait_for_timeout(1000)
@@ -198,9 +194,9 @@ def run():
         print("9. Realizando pesquisa...")
         try:
             page.get_by_role("button", name="Pesquisar").click()
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(5000)
             page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(6000)
             print("✓ Pesquisa realizada com sucesso")
         except Exception as e:
             print(f"   ✗ Erro ao pesquisar: {e}")
@@ -216,7 +212,7 @@ def run():
             download = download_info.value
             
             # Salvar arquivo
-            caminho_destino = "C:/Users/81057638/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/arquivo_cma.xlsx"
+            caminho_destino = "./ITABIRA_CONCEICAO2.xlsx"
             download.save_as(caminho_destino)
             
             print(f"✓ Download concluído!")
