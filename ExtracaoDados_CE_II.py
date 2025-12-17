@@ -84,7 +84,7 @@ def run():
                 # Seleção Real do Site
                 page.get_by_label("Site").click()
                 page.wait_for_timeout(500)
-                page.locator("[id=\"56-option\"]").get_by_text("FEIT-BFO - Benef. Conceição II").click()
+                page.locator("[id=\"56-option\"]").get_by_text("FEIT-BFI - Benef. Conceição II").click()
                 page.wait_for_timeout(1000)
                 
                 # Selecionar Perfil - Analista
@@ -194,7 +194,7 @@ def run():
         print("9. Realizando pesquisa...")
         try:
             page.get_by_role("button", name="Pesquisar").click()
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(4000)
             page.wait_for_load_state("networkidle")
             page.wait_for_timeout(6000)
             print("✓ Pesquisa realizada com sucesso")

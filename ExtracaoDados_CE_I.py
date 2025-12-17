@@ -194,7 +194,7 @@ def run():
         print("9. Realizando pesquisa...")
         try:
             page.get_by_role("button", name="Pesquisar").click()
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(4000)
             page.wait_for_load_state("networkidle")
             page.wait_for_timeout(6000)
             print("✓ Pesquisa realizada com sucesso")
