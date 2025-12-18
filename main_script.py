@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 import time
 
-def executar_script(nome_script):
+def executar_script(caminho_completo_script, nome_script):
     """
     Executa um script Python e retorna True se bem-sucedido
     """
@@ -16,8 +16,7 @@ def executar_script(nome_script):
     try:
         # Executar o script sem capturar output (deixa exibir diretamente)
         resultado = subprocess.run(
-            [sys.executable, nome_script],
-            cwd=os.getcwd(),
+            [sys.executable, caminho_completo_script],
             encoding='utf-8',
             errors='ignore'
         )
@@ -39,9 +38,15 @@ def main():
     print("="*70)
     print("EXTRAÇÃO CMA WEB - EXECUÇÃO SEQUENCIAL")
     print("="*70)
-    print(f"Início da execução: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    print(f"Diretório atual: {os.getcwd()}")
+    print(f"Início da execução: {datetime. now().strftime('%d/%m/%Y %H:%M:%S')}")
     print("="*70)
+    
+    # *** DEFINA O CAMINHO DOS SCRIPTS AQUI ***
+    caminho_scripts = r"C:\Dev\Alarmes-CMA-Web"
+    # OU use o diretório atual: 
+    # caminho_scripts = os.getcwd()
+    
+    print(f"Diretório dos scripts: {caminho_scripts}\n")
     
     # Lista de scripts a executar na ordem
     scripts = [
@@ -51,29 +56,30 @@ def main():
     ]
     
     # Verificar se os arquivos existem
-    print("\nVerificando arquivos...")
-    for script in scripts: 
-        if os.path.exists(script):
+    print("Verificando arquivos...")
+    scripts_completos = []
+    for script in scripts:
+        caminho_completo = os.path.join(caminho_scripts, script)
+        if os.path.exists(caminho_completo):
             print(f"✅ {script} encontrado")
+            scripts_completos.append((caminho_completo, script))
         else:
-            print(f"❌ {script} NÃO encontrado!")
+            print(f"❌ {script} NÃO encontrado em:  {caminho_completo}")
             input("\nPressione ENTER para fechar...")
             return 1
     
     resultados = {}
-    inicio_total = datetime.now()
-    houve_erro = False
+    inicio_total = datetime. now()
     
     # Executar cada script sequencialmente
-    for script in scripts:
-        sucesso = executar_script(script)
-        resultados[script] = sucesso
+    for caminho_completo, nome_script in scripts_completos: 
+        sucesso = executar_script(caminho_completo, nome_script)
+        resultados[nome_script] = sucesso
         
         # Se um script falhar, perguntar se deseja continuar
         if not sucesso:
-            houve_erro = True
             print("\n" + "⚠"*35)
-            resposta = input(f"\n{script} falhou.  Deseja continuar com os próximos?   (s/n): ").strip().lower()
+            resposta = input(f"\n{nome_script} falhou.  Deseja continuar com os próximos?   (s/n): ").strip().lower()
             if resposta != 's':
                 print("\n❌ Execução interrompida pelo usuário.")
                 break
@@ -86,7 +92,7 @@ def main():
     print("RESUMO DA EXECUÇÃO")
     print("="*70)
     
-    for script, sucesso in resultados. items():
+    for script, sucesso in resultados.items():
         status = "✅ Sucesso" if sucesso else "❌ Falhou"
         print(f"{status} - {script}")
     
@@ -105,7 +111,7 @@ def main():
         time.sleep(5)
         return 0
     else:
-        print("\n⚠️ Algumas extrações falharam. Verifique os logs acima.")
+        print("\n⚠️ Algumas extrações falharam.  Verifique os logs acima.")
         input("\nPressione ENTER para fechar...")
         return 1
 
@@ -117,7 +123,7 @@ if __name__ == "__main__":
         print("\n\n❌ Execução cancelada pelo usuário (Ctrl+C)")
         input("\nPressione ENTER para fechar...")
         sys.exit(1)
-    except Exception as e: 
+    except Exception as e:  
         print(f"\n\n❌ Erro inesperado: {e}")
         import traceback
         traceback.print_exc()
