@@ -83,16 +83,16 @@ def run():
                 # Selecionar Site - FEIT-BFC
                 print("   - Selecionando Site:  FEIT-BFC - Benef. Conceição II...")
                 # Apenas para limpar o input de perfil - isso caso o site de Conceição II já esteja selecionado
-                page.get_by_label("Site").click()
-                page.locator("[id=\"45-option\"]").get_by_text("FEIT-BFC - Benef.  Cauê").click()
+                page.locator("[id=\"siteInputTree\"]").click()
+                page.locator("[id=\"item.name\"]").get_by_text("FEIT-BFC - Benef.  Cauê").click()
                 page.wait_for_timeout(500)
                 
                 page.wait_for_timeout(1000)
 
                 # Seleção Real do Site
-                page.get_by_label("Site").click()
+                page.locator("[id=\"siteInputTree\"]").click()
                 page.wait_for_timeout(500)
-                page.locator("[id=\"56-option\"]").get_by_text("FEIT-BFI - Benef. Conceição II").click()
+                page.locator("[id=\"item.name\"]").get_by_text("FEIT-BFI - Benef. Conceição II").click()
                 page.wait_for_timeout(1000)
                 
                 # Selecionar Perfil - Analista
