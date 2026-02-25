@@ -16,7 +16,7 @@ def run():
         context = p.chromium. launch_persistent_context(
             user_data_dir=caminho_perfil,
             executable_path=caminho_edge,
-            headless=False,
+            headless=True,
             channel="msedge",
             args=[
                 '--disable-cache',
