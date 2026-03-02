@@ -151,7 +151,12 @@ def run():
             page.locator("#selectPeriodoInicio--toggle").get_by_role("button", name="Open calendar").click()
             page.wait_for_timeout(1000)
             
-            # Clicar no dia específico (ajuste conforme necessário)
+            # Se houve virada de mês, voltar um mês no calendário
+            if data_inicio.month != data_hoje.month:
+                print("   ↩ Voltando um mês no calendário...")
+                page.locator("mat-datepicker-content .mat-calendar-previous-button").click()
+                page.wait_for_timeout(700)
+
             dia_inicio = data_inicio.day
             page.get_by_role("button", name=f"{dia_inicio}/", exact=False).first.click()
             page.wait_for_timeout(1000)
