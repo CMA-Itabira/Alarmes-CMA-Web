@@ -178,8 +178,7 @@ def run():
             page.wait_for_timeout(500)
             
             # Clicar no dia atual
-            dia_hoje = data_hoje.day
-            page.get_by_role("button", name=f"{dia_hoje}/", exact=False).first.click()
+            page.locator("button.today-action-button").click()
             page.wait_for_timeout(1000)
             print(f"✓ Data final selecionada:  {data_hoje.strftime('%d/%m/%Y')}")
         except Exception as e:
