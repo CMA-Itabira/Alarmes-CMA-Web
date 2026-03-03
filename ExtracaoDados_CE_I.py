@@ -115,7 +115,7 @@ def run():
         # Passo 4: Selecionar todos os locais
         print("4. Selecionando todos os locais...")
         try:
-            page.get_by_label("", exact=True).check()
+            # page.get_by_label("", exact=True).check()
             page.wait_for_timeout(1000)
             print("✓ Locais selecionados")
         except Exception as e:
