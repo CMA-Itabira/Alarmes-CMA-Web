@@ -5,7 +5,7 @@ def run():
     with sync_playwright() as p:
         # Configurações do Edge
         caminho_edge = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-        caminho_perfil = r"C:\Users\81057638\AppData\Local\Microsoft\Edge\User Data\Default"
+        caminho_perfil = r"C:\Users\s-ad-cmaitabira\AppData\Local\Microsoft\Edge\User Data\Profile 1"
         
         print("="*70)
         print("EXTRAÇÃO CMA WEB - PONTOS ALARMADOS")
@@ -16,7 +16,7 @@ def run():
         context = p.chromium. launch_persistent_context(
             user_data_dir=caminho_perfil,
             executable_path=caminho_edge,
-            headless=True,
+            headless=False,
             channel="msedge",
             args=[
                 '--disable-cache',
@@ -75,7 +75,7 @@ def run():
             try: 
                 # Selecionar Área - Mineração
                 print("   - Selecionando Área: Mineração...")
-                page.locator("#mat-select-value-3").click()
+                page.locator("#areaInputTest").click()
                 page.wait_for_timeout(500)
                 page.locator("[id=\"Mineração-option\"]").get_by_text("Mineração").click()
                 page.wait_for_timeout(1000)
@@ -96,10 +96,10 @@ def run():
                 page.wait_for_timeout(1000)
                 
                 # Selecionar Perfil - Analista
-                print("   - Selecionando Perfil: Analista...")
+                print("   - Selecionando Perfil: Normativo...")
                 page.get_by_label("Perfil").click()
                 page.wait_for_timeout(500)
-                page.locator("[id=\"[object Object]-option\"]").get_by_text("Analista").click()
+                page.locator("[id=\"[object Object]-option\"]").get_by_text("Normativo").click()
                 page.wait_for_timeout(1500)
                 
             except Exception as e:
@@ -206,7 +206,7 @@ def run():
         print("9. Realizando pesquisa...")
         try:
             page.get_by_role("button", name="Pesquisar").click()
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(6000)
             page.wait_for_load_state("networkidle")
             page.wait_for_timeout(6000)
             print("✓ Pesquisa realizada com sucesso")
@@ -218,13 +218,13 @@ def run():
         # Passo 10: Exportar dados
         print("10. Exportando dados...")
         try:
-            with page.expect_download(timeout=30000) as download_info:
+            with page.expect_download(timeout=50000) as download_info:
                 page.get_by_role("button", name="Exportar Dados").click()
             
             download = download_info.value
             
             # Salvar arquivo
-            caminho_destino = "C:/Users/81057638/OneDrive - Vale S.A/PREDITIVA COMPLEXO ITABIRA - CMA 2.0/ITABIRA_CONCEICAO2.xlsx"
+            caminho_destino = "C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_CONCEICAO2.xlsx"
             download.save_as(caminho_destino)
             
             print(f"✓ Download concluído!")

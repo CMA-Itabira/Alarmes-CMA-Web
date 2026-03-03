@@ -5,7 +5,7 @@ def run():
     with sync_playwright() as p:
         # Configurações do Edge
         caminho_edge = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-        caminho_perfil = r"C:\Users\r0600425\playwright_edge_profile"
+        caminho_perfil = r"C:\Users\s-ad-cmaitabira\AppData\Local\Microsoft\Edge\User Data\Profile 1"
         
         print("="*70)
         print("EXTRAÇÃO CMA WEB - PONTOS ALARMADOS")
@@ -16,7 +16,7 @@ def run():
         context = p.chromium. launch_persistent_context(
             user_data_dir=caminho_perfil,
             executable_path=caminho_edge,
-            headless=True,
+            headless=False,
             channel="msedge",
             args=[
                 '--disable-cache',
@@ -84,15 +84,15 @@ def run():
                 print("   - Selecionando Site:   FEIT-MIN - Equip. Móveis Mina Itabira ...")
 
                 # Apenas para limpar o input de perfil - isso caso A Mina já esteja selecionado
-                page.get_by_label("Site").click()
+                page.locator("[id=\"siteInputTree\"]").click()
                 page.wait_for_timeout(500)
-                page.locator("[id=\"55-option\"]").get_by_text("FEIT-BFO - Benef. Conceição I").click()
+                page.locator("[id=\"item.name\"]").get_by_text("FEIT-BFO - Benef. Conceição I").click()
                 page.wait_for_timeout(1000)
 
                 # Seleção Real da Mina
-                page.get_by_label("Site").click()
+                page.locator("[id=\"siteInputTree\"]").click()
                 page.wait_for_timeout(500)
-                page.locator("[id=\"104-option\"]").get_by_text("FEIT-MIN - Equip. Móveis Mina Itabira").click()
+                page.locator("[id=\"item.name\"]").get_by_text("FEIT-MIN - Equip. Móveis Mina Itabira").click()
                 page.wait_for_timeout(1000)
                 
                 # Selecionar Perfil - Analista
@@ -224,7 +224,7 @@ def run():
             download = download_info.value
             
             # Salvar arquivo
-            caminho_destino = "C:/Users/r0600425/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_MINA.xlsx"
+            caminho_destino = "C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_MINA.xlsx"
             download.save_as(caminho_destino)
             
             print(f"✓ Download concluído!")

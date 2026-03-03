@@ -114,7 +114,7 @@ def main():
     print("=" * 70)
 
     # *** DEFINA O CAMINHO DOS SCRIPTS AQUI ***
-    caminho_scripts = r"C:\Dev\Alarmes-CMA-Web"
+    caminho_scripts = r"C:\Users\s-ad-cmaitabira\Documents\ExtracaoDados"
     # OU use o diretório atual:
     # caminho_scripts = os.getcwd()
 
@@ -125,6 +125,7 @@ def main():
         "ExtracaoDados_CA.py",
         "ExtracaoDados_CE_I.py",
         "ExtracaoDados_CE_II.py",
+	"ExtracaoDados_Mina.py"
     ]
 
     # Verificar se os arquivos existem
@@ -138,8 +139,8 @@ def main():
         else:
             print(f"❌ {script} NÃO encontrado em:  {caminho_completo}")
             esperar_enter_ou_timeout(
-                "\nPressione ENTER para fechar (ou aguarde 2 minutos para fechar automaticamente)...",
-                timeout_segundos=120,
+                "\nPressione ENTER para fechar (ou aguarde 1 minutos para fechar automaticamente)...",
+                timeout_segundos=60,
             )
             return 1
 
