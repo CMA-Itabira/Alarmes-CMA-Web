@@ -199,8 +199,8 @@ def main():
     else:
         print("\n⚠️ Algumas extrações falharam. Verifique os logs acima.")
         esperar_enter_ou_timeout(
-            "\nPressione ENTER para fechar (ou aguarde 2 minutos para fechar automaticamente)...",
-            timeout_segundos=120,
+            "\nPressione ENTER para fechar (ou aguarde 1 minutos para fechar automaticamente)...",
+            timeout_segundos=60,
         )
         return 1
 
@@ -212,8 +212,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n\n❌ Execução cancelada pelo usuário (Ctrl+C)")
         esperar_enter_ou_timeout(
-            "\nPressione ENTER para fechar (ou aguarde 2 minutos para fechar automaticamente)...",
-            timeout_segundos=120,
+            "\nPressione ENTER para fechar (ou aguarde 1 minutos para fechar automaticamente)...",
+            timeout_segundos=60,
         )
         sys.exit(1)
     except Exception as e:
@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
         traceback.print_exc()
         esperar_enter_ou_timeout(
-            "\nPressione ENTER para fechar (ou aguarde 2 minutos para fechar automaticamente)...",
-            timeout_segundos=120,
+            "\nPressione ENTER para fechar (ou aguarde 1 minutos para fechar automaticamente)...",
+            timeout_segundos=60,
         )
         sys.exit(1)
