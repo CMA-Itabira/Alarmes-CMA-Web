@@ -105,6 +105,38 @@ def executar_script(caminho_completo_script, nome_script):
         print(f"\n❌ Erro ao executar {nome_script}: {e}")
         return False
 
+def liberar_espaco_arquivos(arquivos):
+    """
+    Remove a cópia local dos arquivos mantendo-os no SharePoint/OneDrive
+    usando o comando attrib +U do Windows.
+    """
+    print("\n" + "=" * 70)
+    print("PREPARAÇÃO: LIBERANDO ESPAÇO DOS ARQUIVOS LOCAIS (ONEDRIVE)")
+    print("=" * 70)
+    
+    arquivos_processados = False
+    
+    for caminho in arquivos:
+        # Normalizando as barras do caminho para o padrão Windows
+        caminho_win = os.path.normpath(caminho)
+        nome_arquivo = os.path.basename(caminho_win)
+        
+        if os.path.exists(caminho_win):
+            try:
+                print(f"   - Liberando espaço: {nome_arquivo}...")
+                os.system(f'attrib +U "{caminho_win}"')
+                arquivos_processados = True
+            except Exception as e:
+                print(f"   ⚠ Erro ao liberar espaço de {nome_arquivo}: {e}")
+        else:
+            print(f"   ℹ {nome_arquivo} não encontrado localmente (já liberado ou não existe).")
+            
+    if arquivos_processados:
+        print("\n⏳ Aguardando o OneDrive processar (5 segundos)...")
+        time.sleep(5)
+        print("✓ Preparação concluída!\n")
+    else:
+        print("\n✓ Nenhuma cópia local precisava ser liberada.\n")
 
 def main():
     print("=" * 70)
@@ -112,6 +144,15 @@ def main():
     print("=" * 70)
     print(f"Início da execução: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     print("=" * 70)
+
+    # *** PREPARAÇÃO: EXCLUIR CÓPIAS LOCAIS ***
+    arquivos_alvo = [
+        r"C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_CAUE.xlsx",
+        r"C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_CONCEICAO1.xlsx",
+        r"C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_CONCEICAO2.xlsx",
+        r"C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_MINA.xlsx"
+    ]
+    liberar_espaco_arquivos(arquivos_alvo)
 
     # *** DEFINA O CAMINHO DOS SCRIPTS AQUI ***
     caminho_scripts = r"C:\Users\s-ad-cmaitabira\Documents\ExtracaoDados"
@@ -125,7 +166,7 @@ def main():
         "ExtracaoDados_CA.py",
         "ExtracaoDados_CE_I.py",
         "ExtracaoDados_CE_II.py",
-	"ExtracaoDados_Mina.py"
+        "ExtracaoDados_Mina.py"
     ]
 
     # Verificar se os arquivos existem
