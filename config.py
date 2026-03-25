@@ -19,7 +19,14 @@ class Config:
     # Caminhos
     BASE_SHAREPOINT_PATH = os.getenv("BASE_SHAREPOINT_PATH")
     SCRIPTS_DIRECTORY = os.getenv("SCRIPTS_DIRECTORY")
-    LOG_DIRECTORY = os.getenv("LOG_DIRECTORY", "logs")
+    
+    # LOG_DIRECTORY com caminho absoluto
+    _log_dir_env = os.getenv("LOG_DIRECTORY", "logs")
+    if os.path.isabs(_log_dir_env):
+        LOG_DIRECTORY = _log_dir_env
+    else:
+        LOG_DIRECTORY = str(Path(__file__).parent / _log_dir_env)
+    
     SHAREPOINT_LOG_PATH = os.getenv("SHAREPOINT_LOG_PATH")
     RESUMO_EXECUCAO_PATH = os.getenv("RESUMO_EXECUCAO_PATH")
     
