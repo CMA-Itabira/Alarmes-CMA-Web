@@ -1,246 +1,233 @@
-import subprocess
 import sys
-import os
-from datetime import datetime
 import time
 import msvcrt
+from datetime import datetime
 
+from config import Config
+from utils.logger import Logger
+from utils.files import FileManager
+from utils.resumo import ResumoDados, StatusExecucao
+from extractions.caue import ExtractionCaue
+from extractions.conceicao1 import ExtractionConceicao1
+from extractions.conceicao2 import ExtractionConceicao2
+from extractions.mina import ExtractionMina
+
+logger = Logger.get()
 
 def input_com_timeout(prompt: str, timeout: int = 15, default: str = "n") -> str:
     """
     Lê uma linha do usuário esperando até `timeout` segundos (Windows).
     Se não houver digitação nesse tempo, retorna `default`.
-
-    Observação: o usuário precisa finalizar com ENTER para confirmar.
     """
-    print(prompt, end="", flush=True)
-
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    
     inicio = time.time()
     buffer = ""
-
+    
     while True:
-        # Timeout
         if time.time() - inicio >= timeout:
-            print()  # quebra linha após o prompt
+            sys.stdout.write("\n")
+            sys.stdout.flush()
             return default
-
-        # Há tecla pressionada?
+        
         if msvcrt.kbhit():
             ch = msvcrt.getwch()
-
-            # Enter finaliza
+            
             if ch in ("\r", "\n"):
-                print()  # nova linha
-                return buffer.strip()
-
-            # Backspace
+                sys.stdout.write("\n")
+                sys.stdout.flush()
+                return buffer.strip() if buffer.strip() else default
+            
             if ch == "\b":
                 if buffer:
                     buffer = buffer[:-1]
-                    # apaga um char na tela
-                    print("\b \b", end="", flush=True)
+                    sys.stdout.write("\b \b")
+                    sys.stdout.flush()
                 continue
-
-            # Ignora teclas especiais (setas, F1 etc.)
+            
             if ch == "\x00" or ch == "\xe0":
                 _ = msvcrt.getwch()
                 continue
-
+            
             buffer += ch
-            print(ch, end="", flush=True)
-
+            sys.stdout.write(ch)
+            sys.stdout.flush()
+        
         time.sleep(0.05)
 
 
 def esperar_enter_ou_timeout(mensagem: str, timeout_segundos: int = 120) -> None:
     """
     Mantém o console aberto por até `timeout_segundos`, mas permite fechar antes ao pressionar ENTER.
-    (Windows via msvcrt)
     """
-    print(mensagem, end="", flush=True)
-
+    sys.stdout.write(mensagem)
+    sys.stdout.flush()
+    
     inicio = time.time()
     while True:
         if time.time() - inicio >= timeout_segundos:
-            print("\n⏱️ Tempo esgotado. Fechando automaticamente...")
+            logger.info("\n⏱️ Tempo esgotado. Fechando automaticamente...")
             return
-
+        
         if msvcrt.kbhit():
             ch = msvcrt.getwch()
             if ch in ("\r", "\n"):
-                print()  # quebra linha
+                sys.stdout.write("\n")
+                sys.stdout.flush()
                 return
-
-            # descarta qualquer outra tecla (pra não "sujar" a tela)
+        
         time.sleep(0.05)
 
 
-def executar_script(caminho_completo_script, nome_script):
-    """
-    Executa um script Python e retorna True se bem-sucedido
-    """
-    print("\n" + "=" * 70)
-    print(f"INICIANDO:   {nome_script}")
-    print("=" * 70)
-    print(f"Horário de início: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n")
-
-    try:
-        # Executar o script sem capturar output (deixa exibir diretamente)
-        resultado = subprocess.run(
-            [sys.executable, caminho_completo_script],
-            encoding="utf-8",
-            errors="ignore",
-        )
-
-        # Verificar se houve erro
-        if resultado.returncode == 0:
-            print(f"\n✅ {nome_script} concluído com sucesso!")
-            print(f"Horário de término: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-            return True
-        else:
-            print(f"\n❌ {nome_script} falhou com código de erro: {resultado.returncode}")
-            return False
-
-    except Exception as e:
-        print(f"\n❌ Erro ao executar {nome_script}: {e}")
-        return False
-
-def liberar_espaco_arquivos(arquivos):
-    """
-    Remove a cópia local dos arquivos mantendo-os no SharePoint/OneDrive
-    usando o comando attrib +U do Windows.
-    """
-    print("\n" + "=" * 70)
-    print("PREPARAÇÃO: LIBERANDO ESPAÇO DOS ARQUIVOS LOCAIS (ONEDRIVE)")
-    print("=" * 70)
-    
-    arquivos_processados = False
-    
-    for caminho in arquivos:
-        # Normalizando as barras do caminho para o padrão Windows
-        caminho_win = os.path.normpath(caminho)
-        nome_arquivo = os.path.basename(caminho_win)
-        
-        if os.path.exists(caminho_win):
-            try:
-                print(f"   - Liberando espaço: {nome_arquivo}...")
-                os.system(f'attrib +U "{caminho_win}"')
-                arquivos_processados = True
-            except Exception as e:
-                print(f"   ⚠ Erro ao liberar espaço de {nome_arquivo}: {e}")
-        else:
-            print(f"   ℹ {nome_arquivo} não encontrado localmente (já liberado ou não existe).")
-            
-    if arquivos_processados:
-        print("\n⏳ Aguardando o OneDrive processar (5 segundos)...")
-        time.sleep(5)
-        print("✓ Preparação concluída!\n")
-    else:
-        print("\n✓ Nenhuma cópia local precisava ser liberada.\n")
-
 def main():
-    print("=" * 70)
-    print("EXTRAÇÃO CMA WEB - EXECUÇÃO SEQUENCIAL")
-    print("=" * 70)
-    print(f"Início da execução: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    print("=" * 70)
-
-    # *** PREPARAÇÃO: EXCLUIR CÓPIAS LOCAIS ***
-    arquivos_alvo = [
-        r"C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_CAUE.xlsx",
-        r"C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_CONCEICAO1.xlsx",
-        r"C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_CONCEICAO2.xlsx",
-        r"C:/Users/s-ad-cmaitabira/Vale S.A/PREDITIVA COMPLEXO ITABIRA - Alarmes_Senseup/CMA 2.0/ITABIRA_MINA.xlsx"
+    try:
+        # Validar configurações
+        Config.validate()
+        logger.info("✓ Configurações carregadas com sucesso\n")
+    except ValueError as e:
+        logger.error(f"❌ Erro de configuração: {e}")
+        erro_msg = f"Erro de configuração: {str(e)[:100]}"
+        ResumoDados.adicionar_resultado(StatusExecucao.FALHA_TOTAL, erro_msg)
+        Logger.save_to_sharepoint()
+        esperar_enter_ou_timeout(
+            "\nPressione ENTER para fechar (ou aguarde 1 minuto para fechar automaticamente)...",
+            timeout_segundos=60,
+        )
+        return 1
+    
+    logger.info("=" * 70)
+    logger.info("EXTRAÇÃO CMA WEB - EXECUÇÃO SEQUENCIAL")
+    logger.info("=" * 70)
+    logger.info(f"Início da execução: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    logger.info("=" * 70)
+    
+    # Preparação: liberar espaço dos arquivos
+    logger.info("\n📁 Liberando espaço em OneDrive...")
+    target_files = FileManager.get_target_files()
+    FileManager.free_space(target_files)
+    
+    # Lista de extrações a executar (nome, classe)
+    extractions_list = [
+        ("Cauê", ExtractionCaue()),
+        ("Conceição I", ExtractionConceicao1()),
+        ("Conceição II", ExtractionConceicao2()),
+        ("Mina Itabira", ExtractionMina()),
     ]
-    liberar_espaco_arquivos(arquivos_alvo)
-
-    # *** DEFINA O CAMINHO DOS SCRIPTS AQUI ***
-    caminho_scripts = r"C:\Users\s-ad-cmaitabira\Documents\ExtracaoDados"
-    # OU use o diretório atual:
-    # caminho_scripts = os.getcwd()
-
-    print(f"Diretório dos scripts: {caminho_scripts}\n")
-
-    # Lista de scripts a executar na ordem
-    scripts = [
-        "ExtracaoDados_CA.py",
-        "ExtracaoDados_CE_I.py",
-        "ExtracaoDados_CE_II.py",
-        "ExtracaoDados_Mina.py"
-    ]
-
-    # Verificar se os arquivos existem
-    print("Verificando arquivos...")
-    scripts_completos = []
-    for script in scripts:
-        caminho_completo = os.path.join(caminho_scripts, script)
-        if os.path.exists(caminho_completo):
-            print(f"✅ {script} encontrado")
-            scripts_completos.append((caminho_completo, script))
-        else:
-            print(f"❌ {script} NÃO encontrado em:  {caminho_completo}")
-            esperar_enter_ou_timeout(
-                "\nPressione ENTER para fechar (ou aguarde 1 minutos para fechar automaticamente)...",
-                timeout_segundos=60,
-            )
-            return 1
-
+    
     resultados = {}
+    excecoes_encontradas = []
     inicio_total = datetime.now()
-
-    # Executar cada script sequencialmente
-    for caminho_completo, nome_script in scripts_completos:
-        sucesso = executar_script(caminho_completo, nome_script)
-        resultados[nome_script] = sucesso
-
-        # Se um script falhar, perguntar se deseja continuar (aguarda 15s, padrão "s")
-        if not sucesso:
-            print("\n" + "⚠" * 35)
-
-            resposta = input_com_timeout(
-                f"\n{nome_script} falhou. Deseja continuar com os próximos? (s/n) [auto: n em 15s]: ",
-                timeout=15,
-                default="n",
-            ).strip().lower()
-
-            # Se o usuário só der ENTER, tratar como "n" também
-            if resposta == "":
-                resposta = "n"
-
-            if resposta != "s":
-                print("\n❌ Execução interrompida pelo usuário.")
-                break
-
+    total_extractions = len(extractions_list)
+    sucessos = 0
+    
+    # Executar cada extração sequencialmente
+    for nome_extracao, extraction in extractions_list:
+        try:
+            sucesso = extraction.run()
+            resultados[nome_extracao] = sucesso
+            
+            if sucesso:
+                sucessos += 1
+                logger.info(f"✓ {nome_extracao} concluída com sucesso")
+            else:
+                logger.error(f"✗ {nome_extracao} falhou")
+            
+            # Se uma extração falhar, perguntar se deseja continuar
+            if not sucesso:
+                logger.warning("\n" + "⚠" * 35)
+                
+                resposta = input_com_timeout(
+                    f"\n{nome_extracao} falhou. Deseja continuar com as próximas? (s/n) [auto: s em 15s]: ",
+                    timeout=15,
+                    default="s",
+                ).strip().lower()
+                
+                if resposta == "s":
+                    logger.info(f"➡️ Continuando com próximas extrações...")
+                else:
+                    logger.error("\n❌ Execução interrompida pelo usuário.")
+                    break
+        
+        except TimeoutError as e:
+            logger.warning(f"⚠ Timeout na extração {nome_extracao}: {e}")
+            resultados[nome_extracao] = True  # Considerar como sucesso com exceção
+            excecoes_encontradas.append(f"Timeout em {nome_extracao}")
+            sucessos += 1
+            logger.info(f"➡️ Continuando com próximas extrações...")
+        
+        except Exception as e:
+            logger.error(f"❌ Erro ao executar extração {nome_extracao}: {e}")
+            resultados[nome_extracao] = False
+            
+            # Extrair módulo/função do erro
+            error_type = type(e).__name__
+            excecoes_encontradas.append(f"{error_type} em {nome_extracao}")
+            
+            logger.info(f"➡️ Continuando com próximas extrações...")
+    
     # Resumo final
     fim_total = datetime.now()
     duracao = fim_total - inicio_total
-
-    print("\n" + "=" * 70)
-    print("RESUMO DA EXECUÇÃO")
-    print("=" * 70)
-
-    for script, sucesso in resultados.items():
+    
+    logger.info("\n" + "=" * 70)
+    logger.info("RESUMO DA EXECUÇÃO")
+    logger.info("=" * 70)
+    
+    for nome_extracao, sucesso in resultados.items():
         status = "✅ Sucesso" if sucesso else "❌ Falhou"
-        print(f"{status} - {script}")
-
-    print("\n" + "=" * 70)
-    print(f"Início:   {inicio_total.strftime('%d/%m/%Y %H:%M:%S')}")
-    print(f"Término:  {fim_total.strftime('%d/%m/%Y %H:%M:%S')}")
-    print(f"Duração:  {duracao}")
-    print("=" * 70)
-
-    # Verificar se todos foram bem-sucedidos
+        logger.info(f"{status} - {nome_extracao}")
+    
+    logger.info("\n" + "=" * 70)
+    logger.info(f"Início:   {inicio_total.strftime('%d/%m/%Y %H:%M:%S')}")
+    logger.info(f"Término:  {fim_total.strftime('%d/%m/%Y %H:%M:%S')}")
+    logger.info(f"Duração:  {duracao}")
+    logger.info(f"Sucessos: {sucessos}/{total_extractions}")
+    logger.info("=" * 70)
+    
+    # Determinar status final
     todos_sucesso = all(resultados.values()) if resultados else False
-
-    if todos_sucesso:
-        print("\n🎉 Todas as extrações foram concluídas com sucesso!")
-        print("\nFechando em 5 segundos...")
+    
+    if todos_sucesso and not excecoes_encontradas:
+        status_final = StatusExecucao.SUCESSO
+        observacao = "Todas as extrações concluídas com sucesso"
+        logger.info("\n🎉 Todas as extrações foram concluídas com sucesso!")
+    elif todos_sucesso and excecoes_encontradas:
+        status_final = StatusExecucao.SUCESSO_COM_EXCECAO
+        observacao = "; ".join(excecoes_encontradas[:3])  # Máximo 3 exceções
+        logger.warning("\n⚠️ Extrações concluídas com algumas exceções (timeouts, etc).")
+    elif sucessos > 0 and sucessos < total_extractions:
+        status_final = StatusExecucao.FALHA_PARCIAL
+        falhas = [nome for nome, sucesso in resultados.items() if not sucesso]
+        observacao = f"Falhas em: {', '.join(falhas[:2])}"
+        logger.warning("\n⚠️ Algumas extrações falharam, mas outras foram concluídas.")
+    else:
+        status_final = StatusExecucao.FALHA_TOTAL
+        observacao = "Todas as extrações falharam"
+        logger.error("\n❌ Todas as extrações falharam!")
+    
+    # Adicionar resumo final ao arquivo
+    logger.info(f"\n📊 Status Final: {status_final}")
+    logger.info(f"📝 Observação: {observacao}\n")
+    ResumoDados.adicionar_resultado(status_final, observacao)
+    
+    # Salvar log no SharePoint
+    if Config.SAVE_LOG_SHAREPOINT:
+        logger.info("📁 Salvando logs no SharePoint...")
+        Logger.save_to_sharepoint()
+    
+    # Determinar código de saída e tempo de espera
+    if status_final == StatusExecucao.SUCESSO:
+        logger.info("✅ Fechando em 5 segundos...")
+        time.sleep(5)
+        return 0
+    elif status_final == StatusExecucao.SUCESSO_COM_EXCECAO:
+        logger.info("✅ Fechando em 5 segundos...")
         time.sleep(5)
         return 0
     else:
-        print("\n⚠️ Algumas extrações falharam. Verifique os logs acima.")
         esperar_enter_ou_timeout(
-            "\nPressione ENTER para fechar (ou aguarde 1 minutos para fechar automaticamente)...",
+            "\nPressione ENTER para fechar (ou aguarde 1 minuto para fechar automaticamente)...",
             timeout_segundos=60,
         )
         return 1
@@ -251,19 +238,32 @@ if __name__ == "__main__":
         exit_code = main()
         sys.exit(exit_code)
     except KeyboardInterrupt:
-        print("\n\n❌ Execução cancelada pelo usuário (Ctrl+C)")
+        logger.error("\n\n❌ Execução cancelada pelo usuário (Ctrl+C)")
+        ResumoDados.adicionar_resultado(
+            StatusExecucao.FALHA_TOTAL, 
+            "Cancelado pelo usuário (Ctrl+C)"
+        )
+        Logger.save_to_sharepoint()
         esperar_enter_ou_timeout(
-            "\nPressione ENTER para fechar (ou aguarde 1 minutos para fechar automaticamente)...",
+            "\nPressione ENTER para fechar (ou aguarde 1 minuto para fechar automaticamente)...",
             timeout_segundos=60,
         )
         sys.exit(1)
     except Exception as e:
-        print(f"\n\n❌ Erro inesperado: {e}")
+        logger.error(f"\n\n❌ Erro inesperado: {e}")
         import traceback
-
         traceback.print_exc()
+        
+        # Extrair tipo do erro
+        error_type = type(e).__name__
+        ResumoDados.adicionar_resultado(
+            StatusExecucao.FALHA_TOTAL, 
+            f"{error_type}: {str(e)[:80]}"
+        )
+        Logger.save_to_sharepoint()
+        
         esperar_enter_ou_timeout(
-            "\nPressione ENTER para fechar (ou aguarde 1 minutos para fechar automaticamente)...",
+            "\nPressione ENTER para fechar (ou aguarde 1 minuto para fechar automaticamente)...",
             timeout_segundos=60,
         )
         sys.exit(1)
