@@ -2,11 +2,12 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Carregar variáveis do .env
-load_dotenv()
+# Carregar .env com caminho absoluto
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 class Config:
-    """Gerenciador centralizado de configurações"""
+    """Gerenciador centralizado de configuracoes"""
     
     # Navegador
     EDGE_EXECUTABLE_PATH = os.getenv("EDGE_EXECUTABLE_PATH")
@@ -32,8 +33,8 @@ class Config:
     NETWORK_IDLE_TIMEOUT = int(os.getenv("NETWORK_IDLE_TIMEOUT", 6000))
     DIALOG_OPEN_TIMEOUT = int(os.getenv("DIALOG_OPEN_TIMEOUT", 5000))
     
-    # Extração
-    EXTRACTION_AREA = os.getenv("EXTRACTION_AREA", "Mineração")
+    # Extracao
+    EXTRACTION_AREA = os.getenv("EXTRACTION_AREA", "Mineracao")
     EXTRACTION_PROFILE = os.getenv("EXTRACTION_PROFILE", "Normativo")
     DAYS_BACK = int(os.getenv("DAYS_BACK", 3))
     HEADLESS_MODE = os.getenv("HEADLESS_MODE", "true").lower() == "true"
@@ -41,12 +42,12 @@ class Config:
     
     @staticmethod
     def get_extraction_path(filename: str) -> str:
-        """Retorna o caminho completo para um arquivo de extração"""
+        """Retorna o caminho completo para um arquivo de extracao"""
         return f"{Config.BASE_SHAREPOINT_PATH}/{filename}"
     
     @staticmethod
     def validate():
-        """Valida se todas as configurações obrigatórias estão presentes"""
+        """Valida se todas as configuracoes obrigatorias estao presentes"""
         required_fields = [
             "EDGE_EXECUTABLE_PATH",
             "EDGE_PROFILE_PATH",
@@ -60,6 +61,6 @@ class Config:
         missing = [field for field in required_fields if not getattr(Config, field, None)]
         
         if missing:
-            raise ValueError(f"Configurações obrigatórias faltando: {', '.join(missing)}")
+            raise ValueError(f"Configuracoes obrigatorias faltando: {', '.join(missing)}")
         
         return True
