@@ -9,45 +9,30 @@ class FileManager:
     """Gerencia operações com arquivos OneDrive/SharePoint"""
     
     @staticmethod
-    def free_space(file_paths: list[str]):
+    def free_space_folder(folder_path: str):
         """
-        Remove cópias locais dos arquivos mantendo-os no SharePoint/OneDrive
+        Remove cópia local de uma pasta inteira mantendo no SharePoint/OneDrive
         usando o comando attrib +U do Windows.
+        
+        Args:
+            folder_path: Caminho completo da pasta
         """
-        logger.info("=" * 70)
-        logger.info("PREPARAÇÃO: LIBERANDO ESPAÇO DOS ARQUIVOS LOCAIS (ONEDRIVE)")
-        logger.info("=" * 70)
+        folder_path = os.path.normpath(folder_path)
+        folder_name = os.path.basename(folder_path)
         
-        files_processed = False
+        if not os.path.exists(folder_path):
+            logger.info(f"   Pasta '{folder_name}' nao encontrada localmente (ja liberada ou nao existe).")
+            return False
         
-        for path in file_paths:
-            path_win = os.path.normpath(path)
-            filename = os.path.basename(path_win)
+        try:
+            logger.info(f"   - Liberando espaco da pasta: {folder_name}...")
             
-            if os.path.exists(path_win):
-                try:
-                    logger.info(f"   - Liberando espaço: {filename}...")
-                    os.system(f'attrib +U "{path_win}"')
-                    files_processed = True
-                except Exception as e:
-                    logger.warning(f"   ⚠ Erro ao liberar espaço de {filename}: {e}")
-            else:
-                logger.info(f"   ℹ {filename} não encontrado localmente (já liberado ou não existe).")
+            # Aplicar atributo +U recursivamente na pasta
+            os.system(f'attrib +U "{folder_path}" /S /D')
+            
+            logger.info(f"   OK - Pasta '{folder_name}' liberada com sucesso")
+            return True
         
-        if files_processed:
-            logger.info("\n⏳ Aguardando o OneDrive processar (5 segundos)...")
-            import time
-            time.sleep(5)
-            logger.info("✓ Preparação concluída!\n")
-        else:
-            logger.info("\n✓ Nenhuma cópia local precisava ser liberada.\n")
-    
-    @staticmethod
-    def get_target_files() -> list[str]:
-        """Retorna a lista de arquivos alvo para liberar espaço"""
-        return [
-            Config.get_extraction_path("ITABIRA_CAUE.xlsx"),
-            Config.get_extraction_path("ITABIRA_CONCEICAO1.xlsx"),
-            Config.get_extraction_path("ITABIRA_CONCEICAO2.xlsx"),
-            Config.get_extraction_path("ITABIRA_MINA.xlsx"),
-        ]
+        except Exception as e:
+            logger.warning(f"   AVISO - Erro ao liberar espaco da pasta '{folder_name}': {e}")
+            return False
