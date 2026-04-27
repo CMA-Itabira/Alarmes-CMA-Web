@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 from config import Config
 from utils.logger import Logger
 
@@ -27,8 +28,25 @@ class FileManager:
         try:
             logger.info(f"   - Liberando espaco da pasta: {folder_name}...")
             
-            # Aplicar atributo +U recursivamente na pasta
-            os.system(f'attrib +U "{folder_path}" /S /D')
+            # Aguardar um momento para garantir que OneDrive não está processando
+            time.sleep(1)
+            
+            # Usar subprocess em vez de os.system() para melhor controle
+            result = subprocess.run(
+                ['attrib', '+U', folder_path, '/S', '/D'],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            
+            if result.returncode != 0:
+                logger.warning(f"   AVISO - Comando attrib retornou código {result.returncode}")
+                if result.stderr:
+                    logger.warning(f"   Erro: {result.stderr}")
+                return False
+            
+            # Aguardar OneDrive processar a mudança
+            time.sleep(2)
             
             logger.info(f"   OK - Pasta '{folder_name}' liberada com sucesso")
             return True
