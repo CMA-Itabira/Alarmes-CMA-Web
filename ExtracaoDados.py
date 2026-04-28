@@ -243,7 +243,11 @@ if __name__ == "__main__":
             StatusExecucao.FALHA_TOTAL, 
             "Cancelado pelo usuario (Ctrl+C)"
         )
-        Logger.save_to_sharepoint()
+        try:
+            Logger.save_to_sharepoint()
+        except Exception as save_error:
+            logger.warning(f"Erro ao salvar log no SharePoint: {save_error}")
+        
         esperar_enter_ou_timeout(
             "\nPressione ENTER para fechar (ou aguarde 1 minuto para fechar automaticamente)...",
             timeout_segundos=60,
@@ -254,13 +258,11 @@ if __name__ == "__main__":
         import traceback
         traceback.print_exc()
         
-        # Extrair tipo do erro
-        error_type = type(e).__name__
-        ResumoDados.adicionar_resultado(
-            StatusExecucao.FALHA_TOTAL, 
-            f"{error_type}: {str(e)[:80]}"
-        )
-        Logger.save_to_sharepoint()
+        # NÃO adicionar novo resultado aqui - manter o status já registrado
+        try:
+            Logger.save_to_sharepoint()
+        except Exception as save_error:
+            logger.warning(f"Erro ao salvar log no SharePoint: {save_error}")
         
         esperar_enter_ou_timeout(
             "\nPressione ENTER para fechar (ou aguarde 1 minuto para fechar automaticamente)...",
