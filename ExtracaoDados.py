@@ -109,7 +109,7 @@ def main():
     
     # Lista de extracoes a executar (nome, classe)
     extractions_list = [
-        ("Caue", ExtractionCaue()),
+        #("Caue", ExtractionCaue()),
         ("Conceicao I", ExtractionConceicao1()),
         ("Conceicao II", ExtractionConceicao2()),
         ("Mina Itabira", ExtractionMina()),

@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path  # IMPORTANTE: Adicionado para manipular caminhos de pastas/arquivos
 from utils.browser import BrowserManager
 from utils.automation import WebAutomation
 from utils.logger import Logger
@@ -24,7 +25,9 @@ class ExtractionBase:
             page = self.browser_manager.launch()
             self.automation = WebAutomation(page)
             
-            # Executar fluxo
+            # -------------------------------------------------------------
+            # FLUXO 1: EXTRAÇÃO DE PONTOS ALARMADOS
+            # -------------------------------------------------------------
             self.automation.navigate_to_alarms()
             
             if self.automation.open_configuration_dialog():
@@ -48,6 +51,30 @@ class ExtractionBase:
             
             page.wait_for_timeout(3000)
             
+            # -------------------------------------------------------------
+            # FLUXO 2: EXTRAÇÃO DE ANÁLISES REALIZADAS
+            # -------------------------------------------------------------
+            
+            # Preparar o caminho do arquivo de análises
+            original_path = Path(self.output_filename)
+            
+            # Criar a subpasta /Tratativas baseada no caminho original
+            pasta_tratativas = original_path.parent / "Tratativas"
+            pasta_tratativas.mkdir(exist_ok=True, parents=True)
+            
+            # Formar o novo nome do arquivo: Ex: ITABIRA_CONCEICAO1_ANALISES.xlsx
+            novo_nome_arquivo = f"{original_path.stem}_ANALISES{original_path.suffix}"
+            analises_output_path = str(pasta_tratativas / novo_nome_arquivo)
+            
+            # Executar automação de Análises
+            self.automation.navigate_to_analises()
+            self.automation.clear_responsibles_analises()
+            self.automation.set_date_range_analises()
+            self.automation.search_analises()
+            self.automation.export_analises_table(analises_output_path)
+            
+            page.wait_for_timeout(3000)
+
             self._print_footer()
             return True
         

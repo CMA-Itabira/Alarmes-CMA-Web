@@ -15,6 +15,7 @@ class Config:
     
     # URLs
     CMA_WEB_URL = os.getenv("CMA_WEB_URL")
+    CMA_WEB_ANALISES_URL = os.getenv("CMA_WEB_ANALISES_URL")
     
     # Caminhos
     BASE_SHAREPOINT_PATH = os.getenv("BASE_SHAREPOINT_PATH")
@@ -44,6 +45,7 @@ class Config:
     EXTRACTION_AREA = os.getenv("EXTRACTION_AREA", "Mineracao")
     EXTRACTION_PROFILE = os.getenv("EXTRACTION_PROFILE", "Normativo")
     DAYS_BACK = int(os.getenv("DAYS_BACK", 3))
+    DAYS_BACK_ANALISES = int(os.getenv("DAYS_BACK_ANALISES", 90))
     HEADLESS_MODE = os.getenv("HEADLESS_MODE", "true").lower() == "true"
     DISABLE_CACHE = os.getenv("DISABLE_CACHE", "true").lower() == "true"
     
