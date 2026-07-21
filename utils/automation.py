@@ -1,4 +1,4 @@
-from playwright.sync_api import Page
+from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 from datetime import datetime, timedelta
 from config import Config
 from utils.logger import Logger
@@ -11,109 +11,93 @@ class WebAutomation:
     def __init__(self, page: Page):
         self.page = page
     
-    def navigate_to_analises(self):
-        """Navega para a página de análises realizadas"""
-        logger.info("11. Navegando para Análises Realizadas...")
-        self.page.goto(Config.CMA_WEB_ANALISES_URL)
-        self.page.wait_for_load_state("networkidle")
-        self.page.wait_for_timeout(3000)
+    def choose_account_if_needed(self) -> bool:
+        """Seleciona a conta configurada caso a tela de escolha seja exibida"""
 
-    
-    def clear_responsibles_analises(self):
-        """Limpa todos os filtros clicando no botão 'Limpar Filtro'"""
-        logger.info("12. Limpando filtros da tela...")
-        try:
-            # Localiza o botão que contém o texto "Limpar Filtro" e clica nele
-            btn_limpar = self.page.locator('button:has-text("Limpar Filtro")').first
-            btn_limpar.click(force=True)
-            
-            # Aguarda 1 segundo para a tela resetar os campos
-            self.page.wait_for_timeout(1000)
-            
-            logger.info("   ✓ Filtros limpos com sucesso")
-        except Exception as e:
-            logger.warning(f"   ⚠ Erro ao clicar no botão Limpar Filtro: {e}")
+        if not Config.ACCOUNT_SELECTION_ENABLED:
+            logger.info("Seleção automática de conta desabilitada")
+            return False
 
-    def set_date_range_analises(self, days_back: int = None):
-        """Define o intervalo de datas usando navegação pelo calendário"""
-        if days_back is None:
-            days_back = Config.DAYS_BACK_ANALISES
-            
-        today = datetime.today()
-        start_date = today - timedelta(days=days_back)
-        
-        logger.info(f"13. Definindo período de análises ({start_date.strftime('%d/%m/%Y')} a {today.strftime('%d/%m/%Y')})...")
-        try:
-            # --- 1. PREENCHER DATA DE INÍCIO ---
-            logger.info("   - Abrindo calendário de Início...")
-            btn_calendario_inicio = self.page.locator('app-reusable-datepicker[formcontrolname="dataInicio"] button[aria-label="Open calendar"]')
-            btn_calendario_inicio.click(force=True)
-            self.page.wait_for_timeout(1000)
-            
-            # Calcula a diferença de meses para voltar
-            meses_diferenca = (today.year - start_date.year) * 12 + today.month - start_date.month
-            
-            if meses_diferenca > 0:
-                logger.info(f"   - Voltando {meses_diferenca} mês(es) no calendário...")
-                botao_mes_anterior = self.page.locator("button.mat-calendar-previous-button")
-                for _ in range(meses_diferenca):
-                    botao_mes_anterior.click(force=True)
-                    self.page.wait_for_timeout(500)
-            
-            # Formata a data para achar o aria-label exato (ex: "13/05/2026")
-            str_data_inicio = start_date.strftime("%d/%m/%Y")
-            logger.info(f"   - Clicando no dia {str_data_inicio}...")
-            
-            # Busca o botão do dia exato globalmente (usando a classe mat-calendar-body-cell e o aria-label)
-            btn_dia_inicio = self.page.locator(f'button.mat-calendar-body-cell[aria-label="{str_data_inicio}"]')
-            btn_dia_inicio.click(force=True)
-            self.page.wait_for_timeout(1000)
-            
-            # --- 2. PREENCHER DATA DE FIM ---
-            logger.info("   - Abrindo calendário de Fim...")
-            btn_calendario_fim = self.page.locator('app-reusable-datepicker[formcontrolname="dataFim"] button[aria-label="Open calendar"]')
-            btn_calendario_fim.click(force=True)
-            self.page.wait_for_timeout(1000)
-            
-            # Clica no botão HOJE da interface
-            logger.info("   - Clicando no botão HOJE...")
-            btn_hoje = self.page.locator("button.today-action-button")
-            btn_hoje.click(force=True)
-            self.page.wait_for_timeout(1000)
-            
-            logger.info("   ✓ Período de análises definido")
-        except Exception as e:
-            logger.warning(f"   ⚠ Erro ao definir datas nas análises usando calendário: {e}")
+        logger.info(
+            f"Verificando se a tela "
+            f"'{Config.ACCOUNT_CHOOSER_TITLE}' foi exibida..."
+        )
 
-    def search_analises(self):
-        """Realiza a pesquisa na tela de análises"""
-        logger.info("14. Realizando pesquisa de análises...")
         try:
-            self.page.get_by_role("button", name="Pesquisar").click()
-            self.page.wait_for_timeout(3000)
-            self.page.wait_for_load_state("networkidle")
-            self.page.wait_for_timeout(Config.NETWORK_IDLE_TIMEOUT)
-            logger.info("   ✓ Pesquisa concluída")
-        except Exception as e:
-            logger.error(f"   ✗ Erro ao pesquisar análises: {e}")
+            account_chooser_title = self.page.get_by_text(
+                Config.ACCOUNT_CHOOSER_TITLE,
+                exact=True
+            ).first
+
+            account_chooser_title.wait_for(
+                state="visible",
+                timeout=Config.ACCOUNT_CHOOSER_TIMEOUT
+            )
+
+        except PlaywrightTimeoutError:
+            logger.info(
+                "Tela de seleção de conta não foi exibida. "
+                "Continuando com a sessão atual..."
+            )
+            return False
+
+        logger.info("Tela de seleção de conta localizada")
+
+        try:
+            account_text = self.page.get_by_text(
+                Config.ACCOUNT_NAME,
+                exact=True
+            ).first
+
+            account_text.wait_for(
+                state="visible",
+                timeout=Config.ACCOUNT_CLICK_TIMEOUT
+            )
+
+            clickable_account = account_text.locator(
+                "xpath=ancestor-or-self::*["
+                "self::button "
+                "or @role='button' "
+                "or @tabindex='0'"
+                "][1]"
+            )
+
+            if clickable_account.count() > 0:
+                target = clickable_account.first
+            else:
+                target = account_text
+
+            logger.info(
+                f"Selecionando a conta: {Config.ACCOUNT_NAME}..."
+            )
+
+            target.click(
+                timeout=Config.ACCOUNT_CLICK_TIMEOUT
+            )
+
+            self.page.wait_for_timeout(
+                Config.ACCOUNT_AFTER_CLICK_WAIT
+            )
+
+            logger.info(
+                f"Conta {Config.ACCOUNT_NAME} selecionada"
+            )
+
+            return True
+
+        except PlaywrightTimeoutError as e:
+            logger.error(
+                f"A tela de escolha de conta foi exibida, "
+                f"mas a conta '{Config.ACCOUNT_NAME}' "
+                f"não foi encontrada: {e}"
+            )
             raise
 
-    def export_analises_table(self, output_path: str):
-        """Exporta a tabela de análises para o Excel"""
-        logger.info(f"15. Exportando tabela de análises...")
-        try:
-            with self.page.expect_download(timeout=Config.WAIT_FOR_DOWNLOAD_TIMEOUT) as download_info:
-                # Usa o wrapper customizado do Angular e clica no botão dentro dele
-                btn_exportar = self.page.locator('app-export-excel-from-backend button').first
-                btn_exportar.click(force=True)
-            
-            download = download_info.value
-            download.save_as(output_path)
-            
-            logger.info("   ✓ Download de análises concluído!")
-            logger.info(f"   ✓ Arquivo salvo em: {output_path}")
         except Exception as e:
-            logger.error(f"   ✗ Erro ao exportar tabela de análises: {e}")
+            logger.error(
+                f"Erro ao selecionar a conta "
+                f"'{Config.ACCOUNT_NAME}': {e}"
+            )
             raise
 
     def navigate_to_alarms(self):
@@ -121,6 +105,8 @@ class WebAutomation:
         logger.info("1. Navegando para a página...")
         self.page.goto(Config.CMA_WEB_URL)
         
+        self.choose_account_if_needed()
+
         logger.info("2. Aguardando autenticação...")
         self.page.wait_for_url("**/analises/pontos-alarmados", timeout=60000)
         self.page.wait_for_load_state("networkidle")
@@ -300,4 +286,108 @@ class WebAutomation:
             logger.info(f"✓ Arquivo salvo em: {output_path}")
         except Exception as e:
             logger.error(f"   ✗ Erro ao exportar dados: {e}")
+            raise
+    def navigate_to_analises(self):
+        """Navega para a página de análises realizadas"""
+        logger.info("11. Navegando para Análises Realizadas...")
+        self.page.goto(Config.CMA_WEB_ANALISES_URL)
+        self.page.wait_for_load_state("networkidle")
+        self.page.wait_for_timeout(3000)
+
+    
+    def clear_responsibles_analises(self):
+        """Limpa todos os filtros clicando no botão 'Limpar Filtro'"""
+        logger.info("12. Limpando filtros da tela...")
+        try:
+            # Localiza o botão que contém o texto "Limpar Filtro" e clica nele
+            btn_limpar = self.page.locator('button:has-text("Limpar Filtro")').first
+            btn_limpar.click(force=True)
+            
+            # Aguarda 1 segundo para a tela resetar os campos
+            self.page.wait_for_timeout(1000)
+            
+            logger.info("   ✓ Filtros limpos com sucesso")
+        except Exception as e:
+            logger.warning(f"   ⚠ Erro ao clicar no botão Limpar Filtro: {e}")
+
+    def set_date_range_analises(self, days_back: int = None):
+        """Define o intervalo de datas usando navegação pelo calendário"""
+        if days_back is None:
+            days_back = Config.DAYS_BACK_ANALISES
+            
+        today = datetime.today()
+        start_date = today - timedelta(days=days_back)
+        
+        logger.info(f"13. Definindo período de análises ({start_date.strftime('%d/%m/%Y')} a {today.strftime('%d/%m/%Y')})...")
+        try:
+            # --- 1. PREENCHER DATA DE INÍCIO ---
+            logger.info("   - Abrindo calendário de Início...")
+            btn_calendario_inicio = self.page.locator('app-reusable-datepicker[formcontrolname="dataInicio"] button[aria-label="Open calendar"]')
+            btn_calendario_inicio.click(force=True)
+            self.page.wait_for_timeout(1000)
+            
+            # Calcula a diferença de meses para voltar
+            meses_diferenca = (today.year - start_date.year) * 12 + today.month - start_date.month
+            
+            if meses_diferenca > 0:
+                logger.info(f"   - Voltando {meses_diferenca} mês(es) no calendário...")
+                botao_mes_anterior = self.page.locator("button.mat-calendar-previous-button")
+                for _ in range(meses_diferenca):
+                    botao_mes_anterior.click(force=True)
+                    self.page.wait_for_timeout(500)
+            
+            # Formata a data para achar o aria-label exato (ex: "13/05/2026")
+            str_data_inicio = start_date.strftime("%d/%m/%Y")
+            logger.info(f"   - Clicando no dia {str_data_inicio}...")
+            
+            # Busca o botão do dia exato globalmente (usando a classe mat-calendar-body-cell e o aria-label)
+            btn_dia_inicio = self.page.locator(f'button.mat-calendar-body-cell[aria-label="{str_data_inicio}"]')
+            btn_dia_inicio.click(force=True)
+            self.page.wait_for_timeout(1000)
+            
+            # --- 2. PREENCHER DATA DE FIM ---
+            logger.info("   - Abrindo calendário de Fim...")
+            btn_calendario_fim = self.page.locator('app-reusable-datepicker[formcontrolname="dataFim"] button[aria-label="Open calendar"]')
+            btn_calendario_fim.click(force=True)
+            self.page.wait_for_timeout(1000)
+            
+            # Clica no botão HOJE da interface
+            logger.info("   - Clicando no botão HOJE...")
+            btn_hoje = self.page.locator("button.today-action-button")
+            btn_hoje.click(force=True)
+            self.page.wait_for_timeout(1000)
+            
+            logger.info("   ✓ Período de análises definido")
+        except Exception as e:
+            logger.warning(f"   ⚠ Erro ao definir datas nas análises usando calendário: {e}")
+
+    def search_analises(self):
+        """Realiza a pesquisa na tela de análises"""
+        logger.info("14. Realizando pesquisa de análises...")
+        try:
+            self.page.get_by_role("button", name="Pesquisar").click()
+            self.page.wait_for_timeout(3000)
+            self.page.wait_for_load_state("networkidle")
+            self.page.wait_for_timeout(Config.NETWORK_IDLE_TIMEOUT)
+            logger.info("   ✓ Pesquisa concluída")
+        except Exception as e:
+            logger.error(f"   ✗ Erro ao pesquisar análises: {e}")
+            raise
+
+    def export_analises_table(self, output_path: str):
+        """Exporta a tabela de análises para o Excel"""
+        logger.info(f"15. Exportando tabela de análises...")
+        try:
+            with self.page.expect_download(timeout=Config.WAIT_FOR_DOWNLOAD_TIMEOUT) as download_info:
+                # Usa o wrapper customizado do Angular e clica no botão dentro dele
+                btn_exportar = self.page.locator('app-export-excel-from-backend button').first
+                btn_exportar.click(force=True)
+            
+            download = download_info.value
+            download.save_as(output_path)
+            
+            logger.info("   ✓ Download de análises concluído!")
+            logger.info(f"   ✓ Arquivo salvo em: {output_path}")
+        except Exception as e:
+            logger.error(f"   ✗ Erro ao exportar tabela de análises: {e}")
             raise

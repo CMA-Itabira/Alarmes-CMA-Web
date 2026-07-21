@@ -20,6 +20,14 @@ class Config:
     # Caminhos
     BASE_SHAREPOINT_PATH = os.getenv("BASE_SHAREPOINT_PATH")
     SCRIPTS_DIRECTORY = os.getenv("SCRIPTS_DIRECTORY")
+
+    # Seleção de conta
+    ACCOUNT_SELECTION_ENABLED = os.getenv("ACCOUNT_SELECTION_ENABLED", "true").lower() == "true"
+    ACCOUNT_CHOOSER_TITLE = os.getenv("ACCOUNT_CHOOSER_TITLE", "Escolha uma conta")
+    ACCOUNT_NAME = os.getenv("ACCOUNT_NAME", "CMA_RPA_ITABIRA")
+    ACCOUNT_CHOOSER_TIMEOUT = int(os.getenv("ACCOUNT_CHOOSER_TIMEOUT", "12000"))
+    ACCOUNT_CLICK_TIMEOUT = int(os.getenv("ACCOUNT_CLICK_TIMEOUT", "10000"))
+    ACCOUNT_AFTER_CLICK_WAIT = int(os.getenv("ACCOUNT_AFTER_CLICK_WAIT", "5000"))
     
     # LOG_DIRECTORY com caminho absoluto
     _log_dir_env = os.getenv("LOG_DIRECTORY", "logs")
@@ -64,7 +72,9 @@ class Config:
             "BASE_SHAREPOINT_PATH",
             "SCRIPTS_DIRECTORY",
             "SHAREPOINT_LOG_PATH",
-            "RESUMO_EXECUCAO_PATH"
+            "RESUMO_EXECUCAO_PATH",
+            "ACCOUNT_CHOOSER_TITLE",
+            "ACCOUNT_NAME"
         ]
         
         missing = [field for field in required_fields if not getattr(Config, field, None)]
