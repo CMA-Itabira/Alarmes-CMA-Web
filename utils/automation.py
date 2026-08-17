@@ -130,7 +130,7 @@ class WebAutomation:
         # Se não estiver aberto, abrir
         if not dialog_visible:
             try:
-                self.page.get_by_text("expand_more").click()
+                self.page.get_by_text("expand_more").first.click()
                 self.page.wait_for_timeout(1500)
                 
                 dialog = self.page.locator("mat-dialog-container, .mat-mdc-dialog-container").first
@@ -179,24 +179,20 @@ class WebAutomation:
             logger.warning(f"   ⚠ Erro ao selecionar locais: {e}")
     
     def clear_responsibles(self):
-        """Limpa a seleção de responsáveis"""
+        """Limpa os filtros clicando no botão BTN_LIMPAR."""
         logger.info("5. Limpando responsáveis...")
+
         try:
-            self.page.locator("[id=\"'inputMultiSelectOpenOpcoes\"]").click()
-            self.page.wait_for_timeout(1000)
-            self.page.locator("[id=\"'idBotaoLimparSelecionado'\"]").click()
-            self.page.wait_for_timeout(1000)
-            
-            logger.info("   - Fechando dropdown...")
-            try:
-                if self.page.locator("#cdk-overlay-0").is_visible():
-                    self.page.mouse.click(50, 50)
-                    self.page.wait_for_timeout(500)
-                    logger.info("   ✓ Dropdown fechado")
-            except Exception as e:
-                logger.warning(f"   ⚠ Erro: {e}")
-            
+            btn_limpar = self.page.locator(
+                'app-button-v2[label="BTN_LIMPAR"] button'
+            )
+
+            btn_limpar.wait_for(state="visible", timeout=10000)
+            btn_limpar.click()
+
+            logger.info("   ✓ Botão Limpar clicado")
             logger.info("✓ Responsáveis limpos")
+
         except Exception as e:
             logger.warning(f"   ⚠ Erro ao limpar responsáveis: {e}")
     
@@ -210,8 +206,8 @@ class WebAutomation:
         
         logger.info(f"6. Selecionando data inicial: {start_date.strftime('%d/%m/%Y')}...")
         try:
-            self.page.locator("#selectPeriodoInicio--toggle").get_by_role("button", name="Open calendar").click()
-            self.page.wait_for_timeout(1000)
+            self.page.locator('app-datepicker-v2[label="PERIODO_INICIO_LABEL"] button[aria-label="Open calendar"]').click()
+            self.page.wait_for_timeout(1000) 
             
             if start_date.month != today.month:
                 logger.info("   ↩ Voltando um mês no calendário...")
@@ -233,9 +229,11 @@ class WebAutomation:
         
         logger.info(f"7. Selecionando data final: {today.strftime('%d/%m/%Y')}...")
         try:
-            self.page.locator("#codigo-1").click()
+            day = today.day
+            self.page.locator('app-datepicker-v2[label="PERIODO_FIM_LABEL"] button[aria-label="Open calendar"]').click()
             self.page.wait_for_timeout(500)
-            self.page.locator("button.today-action-button").click()
+            self.page.get_by_role("button",name=f"{day}/",exact=False).first.click()
+
             self.page.wait_for_timeout(1000)
             logger.info(f"✓ Data final selecionada: {today.strftime('%d/%m/%Y')}")
         except Exception as e:
@@ -250,21 +248,21 @@ class WebAutomation:
     def uncheck_pending_only(self):
         """Desmarca a opção 'Apenas Pendente'"""
         logger.info("8. Desmarcando 'Apenas Pendente'...")
-        try:
-            checkbox = self.page.get_by_role("checkbox", name="Apenas Pendente")
-            if checkbox.is_checked():
-                checkbox.uncheck()
-            self.page.wait_for_timeout(1000)
-            logger.info("✓ 'Apenas Pendente' desmarcado")
-        except Exception as e:
-            logger.warning(f"   ⚠ Erro ao desmarcar pendente: {e}")
+        #try:
+            #checkbox = self.page.get_by_role("checkbox", name="Apenas Pendente")
+            #if checkbox.is_checked():
+               # checkbox.uncheck()
+            #self.page.wait_for_timeout(1000)
+            #logger.info("✓ 'Apenas Pendente' desmarcado")
+        #except Exception as e:
+            #logger.warning(f"   ⚠ Erro ao desmarcar pendente: {e}")
     
     def search(self):
         """Realiza a pesquisa"""
         logger.info("9. Realizando pesquisa...")
         try:
             self.page.get_by_role("button", name="Pesquisar").click()
-            self.page.wait_for_timeout(6000)
+            self.page.wait_for_timeout(15000)
             self.page.wait_for_load_state("networkidle")
             self.page.wait_for_timeout(Config.NETWORK_IDLE_TIMEOUT)
             logger.info("✓ Pesquisa realizada com sucesso")
@@ -277,7 +275,7 @@ class WebAutomation:
         logger.info("10. Exportando dados...")
         try:
             with self.page.expect_download(timeout=Config.WAIT_FOR_DOWNLOAD_TIMEOUT) as download_info:
-                self.page.get_by_role("button", name="Exportar Dados").click()
+                self.page.locator("button.toolbar-btn.toolbar-btn--excel").click()
             
             download = download_info.value
             download.save_as(output_path)
