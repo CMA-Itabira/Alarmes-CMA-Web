@@ -246,17 +246,25 @@ class WebAutomation:
                 logger.warning("   ⚠ Não foi possível definir data final")
     
     def uncheck_pending_only(self):
-        """Desmarca a opção 'Apenas Pendente'"""
-        logger.info("8. Desmarcando 'Apenas Pendente'...")
-        #try:
-            #checkbox = self.page.get_by_role("checkbox", name="Apenas Pendente")
-            #if checkbox.is_checked():
-               # checkbox.uncheck()
-            #self.page.wait_for_timeout(1000)
-            #logger.info("✓ 'Apenas Pendente' desmarcado")
-        #except Exception as e:
-            #logger.warning(f"   ⚠ Erro ao desmarcar pendente: {e}")
-    
+        """Abre o filtro Status e seleciona todas as opções."""
+        logger.info("8. Selecionando todos os status...")
+
+        try:
+            status_button = self.page.get_by_role("button",name="Status",exact=True)
+            status_button.wait_for(state="visible", timeout=10000)
+            status_button.click()
+            select_all_button = self.page.get_by_role("button",name="Selecione Todos",exact=True)
+            select_all_button.wait_for(state="visible", timeout=10000)
+            select_all_button.click()
+            status_button.click()
+            
+            self.page.wait_for_timeout(1000)
+
+            logger.info("✓ Todos os status foram selecionados")
+
+        except Exception as e:
+            logger.warning(f"   ⚠ Erro ao selecionar todos os status: {e}")
+
     def search(self):
         """Realiza a pesquisa"""
         logger.info("9. Realizando pesquisa...")
